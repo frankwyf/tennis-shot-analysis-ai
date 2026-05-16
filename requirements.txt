@@ -1,0 +1,7 @@
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+
+# Video-related dependencies
+mediapipe>=0.10.14
+opencv-python>=4.8

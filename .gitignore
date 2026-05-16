@@ -7,6 +7,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 ~$*
+dist/
+build/
+*.egg-info/
+*.png
 # Private video assets
 *.mp4
 *.mov

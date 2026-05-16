@@ -1,53 +1,144 @@
 # Tennis Shot Analysis AI
 
-BlazePose-oriented tennis motion-analysis workflow intended for notebook-based
-experimentation in Google Colab or a local Jupyter environment.
+An open-source, portfolio-ready tennis shot analysis project built from a notebook prototype.
 
-## Current status
+This repository provides:
 
-The repository contains a minimal public notebook that demonstrates a complete
-pose-analysis workflow on **synthetic landmark data**.
+- a reusable Python package in `src/tennis_shot_analysis`
+- a CLI workflow for repeatable runs
+- lightweight tests for regression safety
+- multilingual technical docs
+- a retained original notebook for learning and comparison
+- a package-oriented notebook under `notebooks/`
 
-It is:
+## Documentation
 
-- runnable as-is in a local Jupyter environment or Google Colab
-- safe to publish without private video assets
-- easy to extend with real BlazePose inference
+- Main technical guide (English): [docs/guide.en.md](docs/guide.en.md)
+- 技术说明（中文）: [docs/guide.zh-CN.md](docs/guide.zh-CN.md)
+- 技術ガイド（日本語）: [docs/guide.ja.md](docs/guide.ja.md)
+- Sanitization checklist: [docs/SANITIZATION.md](docs/SANITIZATION.md)
+- Migration guide (English): [docs/migration.en.md](docs/migration.en.md)
+- 迁移讲解（中文）: [docs/migration.zh-CN.md](docs/migration.zh-CN.md)
+
+## Repository health
+
+- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Notebook directory overview: [notebooks/README.md](notebooks/README.md)
+
+## Project layout
+
+```text
+.
+|-- .github/
+|   |-- ISSUE_TEMPLATE/
+|   `-- PULL_REQUEST_TEMPLATE.md
+|-- BlazePose_tennis_shot_analysis.ipynb
+|-- CHANGELOG.md
+|-- CONTRIBUTING.md
+|-- docs/
+|   |-- SANITIZATION.md
+|   |-- guide.en.md
+|   |-- guide.ja.md
+|   |-- guide.zh-CN.md
+|   |-- migration.en.md
+|   `-- migration.zh-CN.md
+|-- examples/
+|   |-- README.md
+|   `-- package_workflow_demo.ipynb
+|-- tools/
+|   `-- run_demo.py
+|-- src/tennis_shot_analysis/
+|   |-- __init__.py
+|   |-- __main__.py
+|   |-- cli.py
+|   |-- config.py
+|   |-- data.py
+|   |-- metrics.py
+|   |-- pipeline.py
+|   `-- visualize.py
+|-- tests/
+|   |-- test_metrics.py
+|   `-- test_pipeline.py
+|-- pyproject.toml
+|-- README.md
+|-- requirements-video.txt
+`-- requirements.txt
+```
 
 ## Quick start
 
 ```bash
-# (optional) create a virtual environment
 python -m venv .venv
-.venv\Scripts\activate          # Windows PowerShell
-# source .venv/bin/activate       # macOS / Linux
-
-pip install jupyter ipykernel mediapipe
-jupyter notebook BlazePose_tennis_shot_analysis.ipynb
+.venv\Scripts\activate
+pip install -e .[dev]
 ```
 
-## Intended workflow
+Run the public synthetic demo:
 
-1. Open the notebook in Jupyter or Google Colab.
-2. Run the synthetic demo cells to understand the public workflow.
-3. To enable real-video inference, install the optional dependencies:
+```bash
+tennis-shot-demo --no-show
+```
 
-   ```bash
-   pip install mediapipe>=0.10.14
-   ```
+Or with module mode:
 
-4. Set `USE_MEDIAPIPE_VIDEO = True` in the notebook and point `VIDEO_PATH` to
-   a local or Colab-accessible tennis clip.
-5. Use a single-player MOV or MP4 clip for real experiments.
-6. Prefer a stable camera angle with the full body visible.
+```bash
+python -m tennis_shot_analysis --no-show
+```
 
-## Video preparation guidelines
+## Optional real-video mode
 
-- Keep videos reasonably short.
-- Use one clearly visible subject when possible.
-- Prefer MOV or MP4 input.
-- Avoid severe occlusion and unstable viewpoints.
-- Higher frame rates help with fast actions such as serves.
+```bash
+pip install -e .[video]
+tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
+```
+
+Recommended input:
+
+- single-player clip
+- stable camera view
+- full body visible
+- limited occlusion
+
+## Privacy and open-source positioning
+
+This project is sanitized for public sharing:
+
+- no private videos are committed
+- no personal, client, or internal identifiers are included
+- default workflow uses deterministic synthetic data
+
+See [docs/SANITIZATION.md](docs/SANITIZATION.md) before publishing updates.
+
+## Notebook status
+
+The original notebook is intentionally preserved as:
+
+- a learning baseline
+- a reference for migration from exploratory analysis to package architecture
+
+The new notebook in `notebooks/` demonstrates how to consume the packaged code instead of duplicating logic inline.
+
+## Validation status
+
+Validated locally in the repository virtual environment on 2026-05-16:
+
+- `pip install -e .[dev]`
+- `pytest`
+- `python -m tennis_shot_analysis --no-show`
+
+## Screenshots
+
+Here are some screenshots to showcase the project:
+
+### CLI Output
+![CLI Output](docs/images/cli_output.png)
+
+### Notebook Visualization
+![Notebook Visualization](docs/images/notebook_visualization.png)
+
+### Project Structure
+![Project Structure](docs/images/project_structure.png)
 
 ## License
 
