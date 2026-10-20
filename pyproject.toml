@@ -27,8 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 video = [
-  "mediapipe>=0.10.14",
-  "opencv-python>=4.8",
+  "mediapipe>=0.10.21,<2",
 ]
 dev = [
   "pytest>=8.0",

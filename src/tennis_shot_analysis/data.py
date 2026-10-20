@@ -52,72 +52,121 @@ def load_landmarks_csv(csv_path: Path) -> pd.DataFrame:
 
 def extract_blazepose_landmarks(
     video_path: Path,
+    pose_model_path: Path | None,
     min_visibility: float = 0.5,
     max_frames: int | None = None,
 ) -> pd.DataFrame:
-    """Extract selected body landmarks from a local video using MediaPipe BlazePose."""
+    """Extract selected pose landmarks from a local video with MediaPipe Tasks.
+
+    The model bundle is supplied by the caller and is never downloaded by this
+    function. Frame timestamps passed to MediaPipe are monotonically increasing
+    milliseconds derived from the video's reported frame rate.
+    """
+    if pose_model_path is None:
+        raise ValueError("pose_model_path is required; provide a local MediaPipe Pose Landmarker model.")
+    video_path = Path(video_path)
+    pose_model_path = Path(pose_model_path)
+    if not video_path.is_file():
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    if not pose_model_path.is_file():
+        raise FileNotFoundError(f"MediaPipe pose model file not found: {pose_model_path}")
+    if isinstance(min_visibility, bool) or not isinstance(min_visibility, (int, float)):
+        raise ValueError("min_visibility must be a finite number from 0 to 1.")
+    if not math.isfinite(min_visibility) or not 0 <= min_visibility <= 1:
+        raise ValueError("min_visibility must be a finite number from 0 to 1.")
+    if max_frames is not None and (
+        isinstance(max_frames, bool) or not isinstance(max_frames, int) or max_frames < 1
+    ):
+        raise ValueError("max_frames must be a positive integer when provided.")
+
     try:
         import cv2
-    except ImportError as exc:
-        raise ImportError("opencv-python is required for video mode.") from exc
-
-    try:
         import mediapipe as mp
+        from mediapipe.tasks import python as mp_python
+        from mediapipe.tasks.python import vision
     except ImportError as exc:
-        raise ImportError("mediapipe is required for video mode.") from exc
-
-    if not video_path.exists():
-        raise FileNotFoundError(f"Video file not found: {video_path}")
+        raise ImportError(
+            "Video mode requires the optional dependencies. Install them with: "
+            "python -m pip install '.[video]'"
+        ) from exc
 
     capture = cv2.VideoCapture(str(video_path))
-    fps = capture.get(cv2.CAP_PROP_FPS) or 30.0
+    if not capture.isOpened():
+        capture.release()
+        raise ValueError(f"Could not open video file: {video_path}")
+
     rows: list[dict[str, float | int]] = []
-    frame_index = 0
+    try:
+        fps = float(capture.get(cv2.CAP_PROP_FPS))
+        if not math.isfinite(fps) or fps <= 0:
+            raise ValueError(
+                f"Video reports an invalid frame rate ({fps!r}); use a video with a readable positive FPS."
+            )
 
-    with mp.solutions.pose.Pose(
-        static_image_mode=False,
-        model_complexity=1,
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5,
-    ) as pose:
-        while True:
-            has_frame, frame = capture.read()
-            if not has_frame:
-                break
-            if max_frames is not None and frame_index >= max_frames:
-                break
+        options = vision.PoseLandmarkerOptions(
+            base_options=mp_python.BaseOptions(model_asset_path=str(pose_model_path)),
+            running_mode=vision.RunningMode.VIDEO,
+        )
+        try:
+            landmarker_context = vision.PoseLandmarker.create_from_options(options)
+        except (RuntimeError, ValueError) as exc:
+            raise ValueError(
+                "Could not initialize MediaPipe Pose Landmarker; verify that "
+                f"'{pose_model_path}' is a compatible local .task model: {exc}"
+            ) from exc
+        with landmarker_context as landmarker:
+            frame_index = 0
+            previous_timestamp_ms = -1
+            while max_frames is None or frame_index < max_frames:
+                has_frame, frame = capture.read()
+                if not has_frame:
+                    break
 
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = pose.process(rgb_frame)
+                time_s = frame_index / fps
+                timestamp_ms = max(previous_timestamp_ms + 1, int(round(time_s * 1000)))
+                previous_timestamp_ms = timestamp_ms
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+                try:
+                    result = landmarker.detect_for_video(image, timestamp_ms)
+                except (RuntimeError, ValueError) as exc:
+                    raise ValueError(
+                        f"MediaPipe pose inference failed at frame {frame_index}: {exc}"
+                    ) from exc
 
-            if result.pose_landmarks is not None:
-                landmarks_result = result.pose_landmarks.landmark
-                wrist = landmarks_result[POSE_LANDMARK_IDS["wrist"]]
-                shoulder = landmarks_result[POSE_LANDMARK_IDS["shoulder"]]
-                hip = landmarks_result[POSE_LANDMARK_IDS["hip"]]
+                poses = getattr(result, "pose_landmarks", None)
+                if poses:
+                    landmarks_result = poses[0]
+                    wrist = landmarks_result[POSE_LANDMARK_IDS["wrist"]]
+                    shoulder = landmarks_result[POSE_LANDMARK_IDS["shoulder"]]
+                    hip = landmarks_result[POSE_LANDMARK_IDS["hip"]]
 
-                visibility_values = [
-                    getattr(wrist, "visibility", 1.0),
-                    getattr(shoulder, "visibility", 1.0),
-                    getattr(hip, "visibility", 1.0),
-                ]
-                if min(visibility_values) >= min_visibility:
-                    rows.append(
-                        {
-                            "frame": frame_index,
-                            "time_s": frame_index / fps,
-                            "hip_x": hip.x,
-                            "hip_y": hip.y,
-                            "shoulder_x": shoulder.x,
-                            "shoulder_y": shoulder.y,
-                            "wrist_x": wrist.x,
-                            "wrist_y": wrist.y,
-                        }
-                    )
-
-            frame_index += 1
-
-    capture.release()
+                    visibility_values = [
+                        getattr(wrist, "visibility", 1.0),
+                        getattr(shoulder, "visibility", 1.0),
+                        getattr(hip, "visibility", 1.0),
+                    ]
+                    if all(
+                        isinstance(value, (int, float))
+                        and math.isfinite(value)
+                        and value >= min_visibility
+                        for value in visibility_values
+                    ):
+                        rows.append(
+                            {
+                                "frame": frame_index,
+                                "time_s": time_s,
+                                "hip_x": hip.x,
+                                "hip_y": hip.y,
+                                "shoulder_x": shoulder.x,
+                                "shoulder_y": shoulder.y,
+                                "wrist_x": wrist.x,
+                                "wrist_y": wrist.y,
+                            }
+                        )
+                frame_index += 1
+    finally:
+        capture.release()
 
     if not rows:
         raise ValueError(

@@ -31,11 +31,17 @@
 ## 実動画モード（任意）
 
 ```bash
-pip install -e .[video]
-tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
+python -m pip install -e '.[video]'
+tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose_landmarker.task
 ```
 
-抽出できない場合は `--min-visibility` を下げ、単一人物・遮蔽の少ない動画を使用してください。
+動画モードでは MediaPipe Tasks を使用し、ローカルの Pose Landmarker
+`.task` モデルファイルを指定します。モデルの重みは自動でダウンロード
+されません。動画が開けることと FPS が有効であることを確認し、MediaPipe
+には単調増加するミリ秒タイムスタンプを渡します。終了時や例外時には動画
+キャプチャを解放します。抽出できない場合は `--min-visibility` を下げ、
+単一人物・遮蔽の少ない動画を使用してください。従来の
+`--use-mediapipe-video` と `--video-path` は `--pose-model` と併用できます。
 
 ## レビューで話せるポイント
 

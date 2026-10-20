@@ -73,7 +73,9 @@ Notebook 非常适合做早期探索，但当项目需要下面这些能力时�
 
 ### 3. 真实视频逻辑
 
-原来 notebook 里对 MediaPipe BlazePose 的调用，现在被封装成 `extract_blazepose_landmarks()`。
+原来 notebook 里对 MediaPipe BlazePose 的调用，现在被封装成
+`extract_blazepose_landmarks()`，并使用 MediaPipe Tasks 与用户指定的本地
+`.task` 模型文件。这样不会自动下载模型权重，也明确了帧时间戳和资源释放流程。
 
 这意味着：
 

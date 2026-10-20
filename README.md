@@ -94,11 +94,25 @@ python -m tennis_shot_analysis --no-show
 
 ```bash
 python -m pip install -e '.[video]'
-tennis-shot-demo --source video --input your_clip.mp4
+tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose_landmarker.task
 ```
 
-The legacy `--use-mediapipe-video --video-path ...` flags remain available for
-existing scripts.
+Video mode uses MediaPipe Tasks and requires a locally supplied Pose Landmarker
+`.task` model file. The project does not download model weights. The legacy
+`--use-mediapipe-video --video-path ...` flags remain available for existing
+scripts; add `--pose-model PATH` to use them.
+
+MediaPipe wheels vary by Python version and architecture. PyPI currently
+publishes a macOS ARM64 wheel for MediaPipe 1.1.1, while MediaPipe 0.10.21 has a
+CPython 3.12 universal2 wheel for both ARM64 and Intel. This project uses the
+Tasks API, so it does not depend on the removed Legacy Solutions API. Python
+3.12 is the recommended cross-architecture macOS environment; check wheel
+availability before selecting another version or architecture.
+
+The extractor checks that the video opens and reports a finite positive FPS,
+passes strictly increasing millisecond timestamps to MediaPipe, skips frames
+below the configured visibility threshold, and always releases the video
+capture. No camera permission is needed for local-file mode.
 
 ## Analyze a landmark CSV
 
