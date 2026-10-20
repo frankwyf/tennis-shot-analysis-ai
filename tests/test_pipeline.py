@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -174,3 +175,69 @@ def test_cli_synthetic_no_show_exits_successfully():
 
     assert result.returncode == 0, result.stderr
     assert "frame_count" in result.stdout
+
+
+def test_synthetic_cli_exports_repeatable_csv_and_full_precision_json(tmp_path):
+    repository_root = Path(__file__).resolve().parents[1]
+    environment = {**os.environ, "MPLBACKEND": "Agg"}
+    first_csv = tmp_path / "first" / "landmarks.csv"
+    first_json = tmp_path / "first" / "summary.json"
+    second_csv = tmp_path / "second" / "landmarks.csv"
+    second_json = tmp_path / "second" / "summary.json"
+
+    for landmarks_path, summary_path in ((first_csv, first_json), (second_csv, second_json)):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "tennis_shot_analysis",
+                "--no-show",
+                "--save-landmarks",
+                str(landmarks_path),
+                "--save-summary",
+                str(summary_path),
+            ],
+            cwd=repository_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, result.stderr
+
+    assert first_csv.read_bytes() == second_csv.read_bytes()
+    assert first_json.read_bytes() == second_json.read_bytes()
+    exported = json.loads(first_json.read_text(encoding="utf-8"))
+    assert exported["schema_version"] == 1
+    assert exported["source"] == "synthetic"
+    assert exported["data_source_label"] == "Synthetic demo sequence"
+    assert exported["summary"]["impact_row"] == exported["summary"]["impact_frame"]
+    assert "impact_source_frame" in exported["summary"]
+    assert "Unnamed: 0" not in load_landmarks_csv(first_csv).columns
+
+
+def test_cli_reports_summary_output_errors_without_traceback(tmp_path):
+    repository_root = Path(__file__).resolve().parents[1]
+    blocked_path = tmp_path / "existing-directory"
+    blocked_path.mkdir()
+    environment = {**os.environ, "MPLBACKEND": "Agg"}
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tennis_shot_analysis",
+            "--no-show",
+            "--save-summary",
+            str(blocked_path),
+        ],
+        cwd=repository_root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 2
+    assert "Could not write summary JSON" in result.stderr
+    assert "Traceback" not in result.stderr

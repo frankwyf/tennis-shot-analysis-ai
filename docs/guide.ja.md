@@ -43,6 +43,20 @@ tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose
 単一人物・遮蔽の少ない動画を使用してください。従来の
 `--use-mediapipe-video` と `--video-path` は `--pose-model` と併用できます。
 
+## 機械可読な出力
+
+CLI は、派生プロキシ指標を含むランドマーク CSV と、丸めていない JSON
+サマリーを出力できます。
+
+```bash
+tennis-shot-demo --no-show --save-landmarks artifacts/landmarks.csv --save-summary artifacts/summary.json
+```
+
+JSON には `schema_version`、入力 `source`、データソースの表示名、サマリーが
+含まれます。サマリーは `impact_row` と互換キー `impact_frame` の両方を提供
+します。利用側は読み込み前に `schema_version` を確認してください。CSV には
+解析済みランドマークと派生プロキシ指標が入ります。
+
 ## レビューで話せるポイント
 
 1. Notebook 単体からパッケージ化した理由は？

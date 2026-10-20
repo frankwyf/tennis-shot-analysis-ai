@@ -80,6 +80,16 @@ def test_compute_metrics_supports_irregular_positive_intervals():
     assert np.allclose(enriched["wrist_speed"].to_numpy(), [0.0, 1.0, 2.0 / 3.0])
 
 
+def test_summary_dict_preserves_full_precision_and_row_alias():
+    _, summary = compute_metrics(make_landmarks())
+
+    payload = summary.to_dict()
+
+    assert payload["impact_row"] == payload["impact_frame"] == summary.impact_frame
+    assert payload["peak_wrist_speed_norm_units"] == summary.peak_wrist_speed_norm_units
+    assert payload["peak_wrist_speed_norm_units"] != summary.to_series()["peak_wrist_speed_norm_units"]
+
+
 def test_impact_frame_is_row_position_not_dataframe_index_label():
     landmarks = make_landmarks()
     landmarks.index = [10, 20, 30]

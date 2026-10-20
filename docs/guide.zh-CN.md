@@ -42,6 +42,19 @@ tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose
 无遮挡、机位稳定的视频。旧的 `--use-mediapipe-video` 和 `--video-path`
 参数仍可使用，但也需要配合 `--pose-model`。
 
+## 机器可读输出
+
+CLI 可以导出包含派生代理指标的关键点 CSV，以及未舍入的 JSON 摘要，方便
+后续脚本稳定读取：
+
+```bash
+tennis-shot-demo --no-show --save-landmarks artifacts/landmarks.csv --save-summary artifacts/summary.json
+```
+
+JSON 包含 `schema_version`、输入 `source`、可读数据来源标签和摘要；摘要同时
+提供 `impact_row` 与兼容字段 `impact_frame`。读取方应先检查
+`schema_version`。CSV 保存分析后的关键点行及派生代理指标。
+
 ## 常见问题解答
 
 1. 为什么从 notebook 改成包结构？

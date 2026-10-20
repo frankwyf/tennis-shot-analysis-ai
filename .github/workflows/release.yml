@@ -5,16 +5,51 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-
 jobs:
-  github-release:
-    name: Publish GitHub release
+  validate-release:
+    name: Validate and build release
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
-      - name: Create release with generated notes
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Validate tag matches package version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PROJECT_VERSION="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          if [[ "$GITHUB_REF_NAME" != v* || "$TAG_VERSION" != "$PROJECT_VERSION" ]]; then
+            echo "Tag $GITHUB_REF_NAME must match pyproject.toml version $PROJECT_VERSION (prefixed with v)." >&2
+            exit 1
+          fi
+      - name: Install package and release tooling
+        run: python -m pip install -e ".[dev,release]"
+      - name: Run test suite
+        run: python -m pytest
+      - name: Run synthetic CLI demo
+        run: python -m tennis_shot_analysis --no-show
+      - name: Build source and wheel distributions
+        run: python -m build --outdir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub release
+    needs: validate-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-distributions
+          path: dist
+      - name: Create release with generated notes and distributions
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes dist/*
