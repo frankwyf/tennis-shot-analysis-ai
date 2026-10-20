@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tennis-shot-analysis-ai"
-version = "0.1.0"
+version = "0.2.1"
 description = "Open-source tennis shot analysis demo with synthetic and optional MediaPipe workflows"
 readme = "README.md"
 requires-python = ">=3.10"
