@@ -17,8 +17,8 @@ def plot_analysis(
 
     axes[0].plot(landmarks["wrist_x"], landmarks["wrist_y"], color="#c44e52", linewidth=2)
     axes[0].scatter(
-        landmarks.loc[summary.impact_frame, "wrist_x"],
-        landmarks.loc[summary.impact_frame, "wrist_y"],
+        landmarks.iloc[summary.impact_frame]["wrist_x"],
+        landmarks.iloc[summary.impact_frame]["wrist_y"],
         color="#4c72b0",
         s=80,
         label="Peak speed frame",

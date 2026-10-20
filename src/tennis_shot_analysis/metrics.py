@@ -17,16 +17,20 @@ REQUIRED_LANDMARK_COLUMNS = (
 @dataclass(slots=True)
 class AnalysisSummary:
     frame_count: int
+    # Legacy name retained for compatibility; this is a zero-based row position.
     impact_frame: int
     impact_time_s: float
     peak_wrist_speed_norm_units: float
     mean_torso_rotation_proxy: float
+    impact_source_frame: int | None = None
 
     def to_series(self) -> pd.Series:
         return pd.Series(
             {
                 "frame_count": self.frame_count,
                 "impact_frame": self.impact_frame,
+                "impact_row": self.impact_frame,
+                "impact_source_frame": self.impact_source_frame,
                 "impact_time_s": round(self.impact_time_s, 3),
                 "peak_wrist_speed_norm_units": round(self.peak_wrist_speed_norm_units, 3),
                 "mean_torso_rotation_proxy": round(self.mean_torso_rotation_proxy, 4),
@@ -56,10 +60,18 @@ def _validate_landmarks(landmarks: pd.DataFrame) -> dict[str, np.ndarray]:
         columns = ", ".join(non_numeric_columns)
         raise ValueError(f"Landmark columns must be numeric; invalid columns: {columns}.")
 
+    if "frame" in landmarks and (
+        not pd.api.types.is_numeric_dtype(landmarks["frame"].dtype)
+        or pd.api.types.is_complex_dtype(landmarks["frame"].dtype)
+    ):
+        raise ValueError("frame column must contain numeric source frame numbers.")
+
     values = {
         column: landmarks[column].to_numpy(dtype=np.float64, na_value=np.nan)
         for column in REQUIRED_LANDMARK_COLUMNS
     }
+    if "frame" in landmarks:
+        values["frame"] = landmarks["frame"].to_numpy(dtype=np.float64, na_value=np.nan)
     non_finite_values = []
     for column, column_values in values.items():
         invalid_positions = np.flatnonzero(~np.isfinite(column_values))
@@ -69,6 +81,19 @@ def _validate_landmarks(landmarks: pd.DataFrame) -> dict[str, np.ndarray]:
     if non_finite_values:
         details = "; ".join(non_finite_values)
         raise ValueError(f"Non-finite values in required landmark data: {details}.")
+
+    if "frame" in values:
+        source_frames = values["frame"]
+        valid_frame_numbers = (
+            (source_frames >= 0)
+            & (source_frames == np.floor(source_frames))
+            & (np.diff(source_frames, prepend=source_frames[0]) > 0)
+        )
+        valid_frame_numbers[0] = source_frames[0] >= 0 and source_frames[0] == np.floor(source_frames[0])
+        if not valid_frame_numbers.all():
+            raise ValueError(
+                "frame must contain non-negative, strictly increasing integer source frame numbers."
+            )
 
     with np.errstate(over="ignore", invalid="ignore"):
         time_deltas = np.diff(values["time_s"])
@@ -117,15 +142,17 @@ def compute_metrics(landmarks: pd.DataFrame) -> tuple[pd.DataFrame, AnalysisSumm
     enriched["wrist_speed"] = wrist_speed
     enriched["torso_rotation_proxy"] = torso_rotation_proxy
 
-    impact_frame = int(enriched["wrist_speed"].idxmax())
-    impact_time = float(enriched.loc[impact_frame, "time_s"])
-    peak_speed = float(enriched.loc[impact_frame, "wrist_speed"])
+    impact_row = int(np.argmax(wrist_speed))
+    impact_time = float(values["time_s"][impact_row])
+    peak_speed = float(wrist_speed[impact_row])
+    impact_source_frame = int(values["frame"][impact_row]) if "frame" in values else None
 
     summary = AnalysisSummary(
         frame_count=int(len(enriched)),
-        impact_frame=impact_frame,
+        impact_frame=impact_row,
         impact_time_s=impact_time,
         peak_wrist_speed_norm_units=peak_speed,
         mean_torso_rotation_proxy=float(enriched["torso_rotation_proxy"].mean()),
+        impact_source_frame=impact_source_frame,
     )
     return enriched, summary

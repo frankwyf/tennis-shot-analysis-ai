@@ -4,9 +4,12 @@ import subprocess
 import sys
 
 import numpy as np
+import pytest
 
 from tennis_shot_analysis.config import AnalysisConfig
 from tennis_shot_analysis.pipeline import run_analysis
+from tennis_shot_analysis.metrics import compute_metrics
+from tennis_shot_analysis.visualize import plot_analysis
 
 
 def test_run_analysis_synthetic_produces_expected_columns():
@@ -41,6 +44,33 @@ def test_run_analysis_synthetic_is_repeatable():
     assert first_landmarks.equals(second_landmarks)
     assert first_summary == second_summary
     assert first_label == second_label
+
+
+@pytest.mark.parametrize(
+    "kwargs, message",
+    [
+        ({"frame_count": 1}, "frame_count"),
+        ({"frame_count": 0}, "frame_count"),
+        ({"duration_s": 0}, "duration_s"),
+        ({"duration_s": float("nan")}, "duration_s"),
+        ({"min_visibility": -0.1}, "min_visibility"),
+        ({"min_visibility": 1.1}, "min_visibility"),
+        ({"max_frames": 0}, "max_frames"),
+    ],
+)
+def test_analysis_config_rejects_invalid_values(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        AnalysisConfig(**kwargs)
+
+
+def test_plot_analysis_supports_non_default_dataframe_index(tmp_path):
+    landmarks = run_analysis(AnalysisConfig(frame_count=8))[0]
+    landmarks.index = np.arange(20, 28)
+    landmarks, summary = compute_metrics(landmarks)
+
+    plot_analysis(landmarks, summary, "test", show=False, save_path=str(tmp_path / "plot.png"))
+
+    assert (tmp_path / "plot.png").is_file()
 
 
 def test_cli_synthetic_no_show_exits_successfully():
