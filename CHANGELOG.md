@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-10-20
+
+### Fixed
+
+- Reject invalid landmark frames and timestamps before calculating motion metrics.
+- Report clear errors for missing, nonnumeric, or non-finite landmark data.
+
 ## [0.2.0] - 2026-05-16
 
 ### Added

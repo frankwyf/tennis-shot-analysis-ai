@@ -43,20 +43,21 @@ This repository provides:
 |   |-- guide.zh-CN.md
 |   |-- migration.en.md
 |   `-- migration.zh-CN.md
-|-- examples/
+|-- notebooks/
 |   |-- README.md
 |   `-- package_workflow_demo.ipynb
-|-- tools/
+|-- scripts/
 |   `-- run_demo.py
-|-- src/tennis_shot_analysis/
-|   |-- __init__.py
-|   |-- __main__.py
-|   |-- cli.py
-|   |-- config.py
-|   |-- data.py
-|   |-- metrics.py
-|   |-- pipeline.py
-|   `-- visualize.py
+|-- src/
+|   `-- tennis_shot_analysis/
+|       |-- __init__.py
+|       |-- __main__.py
+|       |-- cli.py
+|       |-- config.py
+|       |-- data.py
+|       |-- metrics.py
+|       |-- pipeline.py
+|       `-- visualize.py
 |-- tests/
 |   |-- test_metrics.py
 |   `-- test_pipeline.py
@@ -68,10 +69,13 @@ This repository provides:
 
 ## Quick start
 
+On macOS with Python 3.10 or newer:
+
 ```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e .[dev]
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+pytest
 ```
 
 Run the public synthetic demo:
@@ -89,7 +93,7 @@ python -m tennis_shot_analysis --no-show
 ## Optional real-video mode
 
 ```bash
-pip install -e .[video]
+python -m pip install -e '.[video]'
 tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
 ```
 
@@ -99,6 +103,20 @@ Recommended input:
 - stable camera view
 - full body visible
 - limited occlusion
+
+## Landmark input contract
+
+`compute_metrics()` requires at least two rows with numeric, finite values for
+`time_s`, `hip_x`, `hip_y`, `shoulder_x`, `shoulder_y`, `wrist_x`, and `wrist_y`.
+Timestamps must be strictly increasing. Irregular positive frame intervals are
+supported; wrist speed uses the elapsed time between each pair of rows. The
+video extractor omits frames whose selected landmarks are below the configured
+visibility threshold.
+
+The reported wrist speed uses normalized 2D image coordinates, and torso
+rotation is a simple shoulder/hip coordinate difference. These are demo proxy
+metrics, not calibrated physical measurements or scientifically validated
+biomechanics.
 
 ## Privacy and open-source positioning
 
@@ -119,26 +137,14 @@ The original notebook is intentionally preserved as:
 
 The new notebook in `notebooks/` demonstrates how to consume the packaged code instead of duplicating logic inline.
 
-## Validation status
+## Validation
 
-Validated locally in the repository virtual environment on 2026-05-16:
+Run the project checks from the repository root:
 
-- `pip install -e .[dev]`
-- `pytest`
-- `python -m tennis_shot_analysis --no-show`
-
-## Screenshots
-
-Here are some screenshots to showcase the project:
-
-### CLI Output
-![CLI Output](docs/images/cli_output.png)
-
-### Notebook Visualization
-![Notebook Visualization](docs/images/notebook_visualization.png)
-
-### Project Structure
-![Project Structure](docs/images/project_structure.png)
+```bash
+pytest
+python -m tennis_shot_analysis --no-show
+```
 
 ## License
 
