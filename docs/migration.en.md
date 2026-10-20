@@ -74,7 +74,9 @@ Benefits:
 
 ### Real-video extraction
 
-The BlazePose branch became `extract_blazepose_landmarks()`.
+The video branch became `extract_blazepose_landmarks()` and uses MediaPipe
+Tasks with an explicit local `.task` model path. This avoids automatic model
+downloads and gives frame processing a documented timestamp and cleanup path.
 
 This matters because optional dependencies and file checks belong in a dedicated boundary, not scattered through notebooks.
 

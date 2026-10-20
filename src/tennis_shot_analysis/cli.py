@@ -21,6 +21,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=Path("sample_tennis_video.mp4"),
         help="Legacy video path; prefer --source video --input PATH",
     )
+    parser.add_argument(
+        "--pose-model",
+        type=Path,
+        default=None,
+        help="Path to a local MediaPipe Pose Landmarker .task model (never downloaded automatically)",
+    )
     parser.add_argument("--min-visibility", type=float, default=0.5, help="Minimum landmark visibility")
     parser.add_argument("--max-frames", type=int, default=None, help="Optional frame limit")
     parser.add_argument("--frame-count", type=int, default=80, help="Synthetic frame count")
@@ -46,6 +52,7 @@ def main() -> None:
             input_path=input_path,
             use_mediapipe_video=args.use_mediapipe_video,
             video_path=args.video_path,
+            pose_model_path=args.pose_model,
             min_visibility=args.min_visibility,
             max_frames=args.max_frames,
             frame_count=args.frame_count,

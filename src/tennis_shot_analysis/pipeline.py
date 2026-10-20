@@ -10,6 +10,7 @@ def run_analysis(config: AnalysisConfig) -> tuple[pd.DataFrame, AnalysisSummary,
         video_path = config.input_path or config.video_path
         raw_landmarks = extract_blazepose_landmarks(
             video_path,
+            pose_model_path=config.pose_model_path,
             min_visibility=config.min_visibility,
             max_frames=config.max_frames,
         )

@@ -31,11 +31,16 @@
 ## 可选真实视频模式
 
 ```bash
-pip install -e .[video]
-tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
+python -m pip install -e '.[video]'
+tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose_landmarker.task
 ```
 
-如果提取失败，可以降低 `--min-visibility`，并优先使用单人、无遮挡、机位稳定的视频。
+视频模式使用 MediaPipe Tasks，需要用户提供本地 Pose Landmarker `.task`
+模型文件；项目不会自动下载模型权重。提取器会检查视频是否可打开及帧率
+是否有效，向 MediaPipe 传入严格递增的毫秒时间戳，并在结束或异常时释放视频
+句柄。如果没有有效关键点，可以降低 `--min-visibility`，并优先使用单人、
+无遮挡、机位稳定的视频。旧的 `--use-mediapipe-video` 和 `--video-path`
+参数仍可使用，但也需要配合 `--pose-model`。
 
 ## 常见问题解答
 

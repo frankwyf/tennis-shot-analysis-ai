@@ -30,14 +30,19 @@ This guide explains how the open-source project is structured and how to answer 
 
 ## Optional real-video mode
 
-Install extras and pass a local video path:
+Install the optional extra, then pass a local video and a local MediaPipe Pose
+Landmarker `.task` model path. The project does not download model weights:
 
 ```bash
-pip install -e .[video]
-tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
+python -m pip install -e '.[video]'
+tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose_landmarker.task
 ```
 
-If no valid landmarks are extracted, reduce visibility threshold or use a clearer single-person clip.
+The video path uses MediaPipe Tasks, validates the reported frame rate, sends
+monotonically increasing timestamps, and releases the capture on completion or
+error. If no valid landmarks are extracted, reduce the visibility threshold
+or use a clearer single-person clip. The legacy `--use-mediapipe-video` and
+`--video-path` flags remain available when paired with `--pose-model`.
 
 ## Interview-style Q&A points
 
