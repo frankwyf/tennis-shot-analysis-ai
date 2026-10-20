@@ -38,6 +38,18 @@ def generate_synthetic_landmarks(frame_count: int = 80, duration_s: float = 1.6)
     )
 
 
+def load_landmarks_csv(csv_path: Path) -> pd.DataFrame:
+    """Load canonical landmark columns from a user-provided CSV file."""
+    csv_path = Path(csv_path)
+    if not csv_path.is_file():
+        raise FileNotFoundError(f"Landmark CSV file not found: {csv_path}")
+
+    try:
+        return pd.read_csv(csv_path)
+    except (OSError, UnicodeDecodeError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
+        raise ValueError(f"Could not read landmark CSV file '{csv_path}': {exc}") from exc
+
+
 def extract_blazepose_landmarks(
     video_path: Path,
     min_visibility: float = 0.5,
