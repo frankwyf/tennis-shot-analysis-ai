@@ -81,7 +81,7 @@ pytest
 Run the public synthetic demo:
 
 ```bash
-tennis-shot-demo --no-show
+tennis-shot-demo --no-show --save-landmarks artifacts/landmarks.csv --save-summary artifacts/summary.json
 ```
 
 Or with module mode:
@@ -89,6 +89,11 @@ Or with module mode:
 ```bash
 python -m tennis_shot_analysis --no-show
 ```
+
+The CLI can also write the enriched landmark table to CSV and a versioned
+summary to JSON. The JSON uses `schema_version: 1` and retains full precision;
+the printed table remains rounded for readability. Both output paths are
+optional, and parent directories are created when needed.
 
 ## Optional real-video mode
 
@@ -194,6 +199,11 @@ Run the project checks from the repository root:
 pytest
 python -m tennis_shot_analysis --no-show
 ```
+
+Releases are created from a `vX.Y.Z` tag that matches the package version in
+`pyproject.toml`. The release workflow runs the test suite and synthetic CLI
+demo, builds source and wheel distributions, then attaches them to the GitHub
+release.
 
 ## License
 

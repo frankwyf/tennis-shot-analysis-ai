@@ -44,6 +44,20 @@ error. If no valid landmarks are extracted, reduce the visibility threshold
 or use a clearer single-person clip. The legacy `--use-mediapipe-video` and
 `--video-path` flags remain available when paired with `--pose-model`.
 
+## Machine-readable outputs
+
+The CLI can export the enriched landmark table and an unrounded summary for
+repeatable downstream analysis:
+
+```bash
+tennis-shot-demo --no-show --save-landmarks artifacts/landmarks.csv --save-summary artifacts/summary.json
+```
+
+The JSON document includes `schema_version`, the input `source`, a human-readable
+source label, and a summary with both `impact_row` and the compatibility key
+`impact_frame`. Consumers should check `schema_version` before relying on the
+shape. The CSV contains the analyzed landmark rows and derived proxy metrics.
+
 ## Interview-style Q&A points
 
 1. Why package + CLI instead of notebook only?

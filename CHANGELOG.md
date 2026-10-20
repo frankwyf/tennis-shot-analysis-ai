@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-10-21
+
+### Added
+
+- Added stable JSON summaries and CSV exports of analyzed landmark data from the CLI.
+- Added a release workflow that validates the version tag, runs tests and the synthetic demo, builds distributions, and publishes them with the GitHub release.
+- Added a macOS optional MediaPipe Tasks video workflow with generated-video coverage.
+
+### Changed
+
+- Migrated optional video inference to the MediaPipe Tasks API and require a local model file.
+- Updated package license metadata to the BSD-2-Clause SPDX expression.
+
 ## [0.2.1] - 2026-10-20
 
 ### Fixed

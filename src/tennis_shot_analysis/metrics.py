@@ -24,6 +24,18 @@ class AnalysisSummary:
     mean_torso_rotation_proxy: float
     impact_source_frame: int | None = None
 
+    def to_dict(self) -> dict[str, int | float | None]:
+        """Return an unrounded, JSON-compatible summary of the analyzed sequence."""
+        return {
+            "frame_count": self.frame_count,
+            "impact_row": self.impact_frame,
+            "impact_frame": self.impact_frame,
+            "impact_source_frame": self.impact_source_frame,
+            "impact_time_s": self.impact_time_s,
+            "peak_wrist_speed_norm_units": self.peak_wrist_speed_norm_units,
+            "mean_torso_rotation_proxy": self.mean_torso_rotation_proxy,
+        }
+
     def to_series(self) -> pd.Series:
         return pd.Series(
             {
