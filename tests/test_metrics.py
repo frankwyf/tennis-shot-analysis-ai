@@ -80,6 +80,35 @@ def test_compute_metrics_supports_irregular_positive_intervals():
     assert np.allclose(enriched["wrist_speed"].to_numpy(), [0.0, 1.0, 2.0 / 3.0])
 
 
+def test_impact_frame_is_row_position_not_dataframe_index_label():
+    landmarks = make_landmarks()
+    landmarks.index = [10, 20, 30]
+
+    _, summary = compute_metrics(landmarks)
+
+    assert summary.impact_frame == 1
+    assert summary.impact_time_s == pytest.approx(0.1)
+
+
+def test_summary_maps_peak_speed_row_to_source_frame_number():
+    landmarks = make_landmarks()
+    landmarks["frame"] = [100, 104, 111]
+
+    _, summary = compute_metrics(landmarks)
+
+    assert summary.impact_frame == 1
+    assert summary.impact_source_frame == 104
+
+
+@pytest.mark.parametrize("frames", [[0, 0, 2], [0, 3, 2], [0, 1.5, 2]])
+def test_compute_metrics_rejects_invalid_source_frame_numbers(frames):
+    landmarks = make_landmarks()
+    landmarks["frame"] = frames
+
+    with pytest.raises(ValueError, match="frame.*strictly increasing integer"):
+        compute_metrics(landmarks)
+
+
 def test_compute_metrics_rejects_non_finite_derived_speed():
     landmarks = make_landmarks().iloc[:2].copy()
     landmarks["wrist_x"] = [-1e308, 1e308]
