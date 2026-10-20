@@ -94,7 +94,38 @@ python -m tennis_shot_analysis --no-show
 
 ```bash
 python -m pip install -e '.[video]'
-tennis-shot-demo --use-mediapipe-video --video-path your_clip.mp4
+tennis-shot-demo --source video --input your_clip.mp4
+```
+
+The legacy `--use-mediapipe-video --video-path ...` flags remain available for
+existing scripts.
+
+## Analyze a landmark CSV
+
+CSV input uses the same canonical landmark columns as the synthetic and video
+pipelines:
+
+```text
+frame,time_s,hip_x,hip_y,shoulder_x,shoulder_y,wrist_x,wrist_y
+0,0.000,0.50,0.78,0.50,0.42,0.30,0.63
+1,0.020,0.50,0.78,0.51,0.42,0.34,0.60
+```
+
+`frame` is optional; when present, it is a non-negative, strictly increasing
+integer source-frame number and may contain gaps. `time_s` and all required
+coordinates must be numeric and finite. Timestamps must increase strictly;
+irregular positive intervals are allowed.
+
+```bash
+tennis-shot-demo --source csv --input landmarks.csv --no-show
+```
+
+The reusable Python entry point accepts a pandas DataFrame with this schema:
+
+```python
+from tennis_shot_analysis import analyze_landmarks
+
+enriched_landmarks, summary = analyze_landmarks(landmarks)
 ```
 
 Recommended input:
@@ -112,6 +143,10 @@ Timestamps must be strictly increasing. Irregular positive frame intervals are
 supported; wrist speed uses the elapsed time between each pair of rows. The
 video extractor omits frames whose selected landmarks are below the configured
 visibility threshold.
+
+`impact_frame` is retained as the zero-based analyzed row position for
+compatibility. `impact_source_frame` reports the original frame number when the
+input contains a `frame` column.
 
 The reported wrist speed uses normalized 2D image coordinates, and torso
 rotation is a simple shoulder/hip coordinate difference. These are demo proxy

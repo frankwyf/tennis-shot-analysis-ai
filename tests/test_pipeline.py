@@ -7,7 +7,8 @@ import numpy as np
 import pytest
 
 from tennis_shot_analysis.config import AnalysisConfig
-from tennis_shot_analysis.pipeline import run_analysis
+from tennis_shot_analysis.data import generate_synthetic_landmarks, load_landmarks_csv
+from tennis_shot_analysis.pipeline import analyze_landmarks, run_analysis
 from tennis_shot_analysis.metrics import compute_metrics
 from tennis_shot_analysis.visualize import plot_analysis
 
@@ -71,6 +72,91 @@ def test_plot_analysis_supports_non_default_dataframe_index(tmp_path):
     plot_analysis(landmarks, summary, "test", show=False, save_path=str(tmp_path / "plot.png"))
 
     assert (tmp_path / "plot.png").is_file()
+
+
+def test_public_landmark_api_matches_direct_metrics():
+    landmarks = generate_synthetic_landmarks(frame_count=12, duration_s=0.8)
+
+    enriched, summary = analyze_landmarks(landmarks)
+
+    assert summary.frame_count == 12
+    assert np.isfinite(enriched.select_dtypes(include=np.number).to_numpy()).all()
+
+
+def test_csv_source_runs_through_same_analysis_pipeline(tmp_path):
+    input_path = tmp_path / "landmarks.csv"
+    source = generate_synthetic_landmarks(frame_count=16, duration_s=1.1)
+    source.to_csv(input_path, index=False)
+
+    landmarks, summary, label = run_analysis(AnalysisConfig(source="csv", input_path=input_path))
+
+    assert summary.frame_count == 16
+    assert label == "Landmark CSV: landmarks.csv"
+    assert np.isfinite(landmarks.select_dtypes(include=np.number).to_numpy()).all()
+
+
+def test_csv_cli_runs_successfully(tmp_path):
+    repository_root = Path(__file__).resolve().parents[1]
+    input_path = tmp_path / "landmarks.csv"
+    generate_synthetic_landmarks(frame_count=10, duration_s=0.7).to_csv(input_path, index=False)
+    environment = {**os.environ, "MPLBACKEND": "Agg"}
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tennis_shot_analysis",
+            "--source",
+            "csv",
+            "--input",
+            str(input_path),
+            "--no-show",
+        ],
+        cwd=repository_root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "frame_count" in result.stdout
+    assert "impact_source_frame" in result.stdout
+
+
+def test_csv_cli_reports_invalid_input_without_traceback(tmp_path):
+    repository_root = Path(__file__).resolve().parents[1]
+    environment = {**os.environ, "MPLBACKEND": "Agg"}
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tennis_shot_analysis",
+            "--source",
+            "csv",
+            "--input",
+            str(tmp_path / "missing.csv"),
+            "--no-show",
+        ],
+        cwd=repository_root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 2
+    assert "Landmark CSV file not found" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_csv_loader_reports_empty_file(tmp_path):
+    input_path = tmp_path / "empty.csv"
+    input_path.write_text("", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Could not read landmark CSV"):
+        load_landmarks_csv(input_path)
 
 
 def test_cli_synthetic_no_show_exits_successfully():

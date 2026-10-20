@@ -1,10 +1,13 @@
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 
 @dataclass(slots=True)
 class AnalysisConfig:
+    source: Literal["synthetic", "csv", "video"] = "synthetic"
+    input_path: Path | None = None
     use_mediapipe_video: bool = False
     video_path: Path = Path("sample_tennis_video.mp4")
     min_visibility: float = 0.5
@@ -13,6 +16,8 @@ class AnalysisConfig:
     duration_s: float = 1.6
 
     def __post_init__(self) -> None:
+        if self.source not in {"synthetic", "csv", "video"}:
+            raise ValueError("source must be one of: synthetic, csv, video.")
         if isinstance(self.frame_count, bool) or not isinstance(self.frame_count, int) or self.frame_count < 2:
             raise ValueError("frame_count must be an integer greater than or equal to 2.")
         if isinstance(self.duration_s, bool) or not isinstance(self.duration_s, (int, float)):
@@ -30,3 +35,14 @@ class AnalysisConfig:
         ):
             raise ValueError("max_frames must be a positive integer when provided.")
         self.video_path = Path(self.video_path)
+        if self.input_path is not None:
+            self.input_path = Path(self.input_path)
+
+        if self.use_mediapipe_video:
+            if self.source not in {"synthetic", "video"}:
+                raise ValueError("use_mediapipe_video cannot be combined with a non-video source.")
+            self.source = "video"
+        if self.source == "video" and self.input_path is None:
+            self.input_path = self.video_path
+        if self.source == "csv" and self.input_path is None:
+            raise ValueError("input_path is required when source is 'csv'.")
