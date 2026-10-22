@@ -66,3 +66,11 @@ shape. The CSV contains the analyzed landmark rows and derived proxy metrics.
    - Portfolio scope: explainable signals and clean architecture first.
 3. How to evolve this project?
    - Add event labeling, temporal smoothing, and model evaluation datasets.
+
+## v0.4 operational contracts
+
+Use `--no-plot` for batch metrics without plotting imports and `--no-show` for
+headless rendering. Output files must be distinct and cannot overwrite inputs
+or the model, including filesystem aliases. CSV/DataFrame labels must be unique.
+See the maintained [API/CLI contract](CLI.md), [metric card](METRICS.md),
+[validation record](VALIDATION.md), and [upgrade roadmap](ROADMAP.md).

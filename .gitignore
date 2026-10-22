@@ -10,8 +10,16 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
-*.png
+artifacts/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
 # Private video assets
 *.mp4
 *.mov
 *.avi
+# Locally supplied model weights
+*.task
+*.tflite
+*.onnx

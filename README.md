@@ -1,210 +1,139 @@
 # Tennis Shot Analysis AI
 
-An open-source, portfolio-ready tennis shot analysis project built from a notebook prototype.
+[![CI](https://github.com/frankwyf/tennis-shot-analysis-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/frankwyf/tennis-shot-analysis-ai/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/frankwyf/tennis-shot-analysis-ai)](https://github.com/frankwyf/tennis-shot-analysis-ai/releases)
+[![License: BSD-2-Clause](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](LICENSE)
 
-This repository provides:
+A small Python library and CLI for reproducible **2D tennis motion proxy analysis**.
+Start with deterministic synthetic landmarks, bring a canonical CSV, or opt into
+MediaPipe Tasks for a local video and a user-supplied model.
 
-- a reusable Python package in `src/tennis_shot_analysis`
-- a CLI workflow for repeatable runs
-- lightweight tests for regression safety
-- multilingual technical docs
-- a retained original notebook for learning and comparison
-- a package-oriented notebook under `notebooks/`
+The project is in **alpha (0.x)**. It is useful for learning, testing pose-data
+pipelines, and exploratory analysis. The metrics are not calibrated biomechanics,
+ball-contact detection, coaching assessments, or medical measurements. See the
+[metric definitions and limitations](docs/METRICS.md).
 
-## Documentation
+## Start here
 
-- Main technical guide (English): [docs/guide.en.md](docs/guide.en.md)
-- 技术说明（中文）: [docs/guide.zh-CN.md](docs/guide.zh-CN.md)
-- 技術ガイド（日本語）: [docs/guide.ja.md](docs/guide.ja.md)
-- Sanitization checklist: [docs/SANITIZATION.md](docs/SANITIZATION.md)
-- Migration guide (English): [docs/migration.en.md](docs/migration.en.md)
-- 迁移讲解（中文）: [docs/migration.zh-CN.md](docs/migration.zh-CN.md)
+Python 3.10–3.13 is covered by the core CI matrix. Python 3.12 is the reference
+macOS environment. Core CI includes Linux, macOS, Windows, and a Python 3.10 job
+using the numerical dependencies' declared lower bounds. Optional video has a
+separate macOS job. The live badge links to the actual results.
 
-## Repository health
-
-- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Changelog: [CHANGELOG.md](CHANGELOG.md)
-- Notebook directory overview: [notebooks/README.md](notebooks/README.md)
-
-## Project layout
-
-```text
-.
-|-- .github/
-|   |-- ISSUE_TEMPLATE/
-|   `-- PULL_REQUEST_TEMPLATE.md
-|-- BlazePose_tennis_shot_analysis.ipynb
-|-- CHANGELOG.md
-|-- CONTRIBUTING.md
-|-- docs/
-|   |-- SANITIZATION.md
-|   |-- guide.en.md
-|   |-- guide.ja.md
-|   |-- guide.zh-CN.md
-|   |-- migration.en.md
-|   `-- migration.zh-CN.md
-|-- notebooks/
-|   |-- README.md
-|   `-- package_workflow_demo.ipynb
-|-- scripts/
-|   `-- run_demo.py
-|-- src/
-|   `-- tennis_shot_analysis/
-|       |-- __init__.py
-|       |-- __main__.py
-|       |-- cli.py
-|       |-- config.py
-|       |-- data.py
-|       |-- metrics.py
-|       |-- pipeline.py
-|       `-- visualize.py
-|-- tests/
-|   |-- test_metrics.py
-|   `-- test_pipeline.py
-|-- pyproject.toml
-|-- README.md
-|-- requirements-video.txt
-`-- requirements.txt
-```
-
-## Quick start
-
-On macOS with Python 3.10 or newer:
+**If using an external SSD on macOS, configure and verify storage before installing:**
+[macOS and external SSD setup](docs/MACOS.md). Keep the checkout and `.venv` on
+that volume; stop if it is unavailable.
 
 ```bash
+git clone https://github.com/frankwyf/tennis-shot-analysis-ai.git
+cd tennis-shot-analysis-ai
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e '.[dev]'
-pytest
+python -m pip install -e .
+
+# No GUI or plotting imports; no video dependencies or model required.
+python -m tennis_shot_analysis --no-plot \
+  --save-landmarks artifacts/landmarks.csv \
+  --save-summary artifacts/summary.json
 ```
 
-Run the public synthetic demo:
+On Windows, create the environment with `py -3.12 -m venv .venv` and activate
+with `.venv\Scripts\Activate.ps1`. Other commands use the same `python` entry point.
+
+The 80-frame default demo produces a peak at analyzed row/source frame 40.
+Printed numbers are rounded; JSON preserves the computed float precision.
+Generate a plot without opening a window:
 
 ```bash
-tennis-shot-demo --no-show --save-landmarks artifacts/landmarks.csv --save-summary artifacts/summary.json
+tennis-shot-demo --no-show --save-figure artifacts/figures/analysis.png
+tennis-shot-demo --version
 ```
 
-Or with module mode:
+To use a built distribution, download the wheel from
+[GitHub Releases](https://github.com/frankwyf/tennis-shot-analysis-ai/releases),
+verify it against the accompanying `SHA256SUMS`, and install it with the Python
+in your project environment. Releases currently target GitHub; PyPI publication
+is not configured.
+
+## Bring your landmarks
 
 ```bash
-python -m tennis_shot_analysis --no-show
+tennis-shot-demo --source csv --input examples/landmarks.csv --no-plot
 ```
 
-The CLI can also write the enriched landmark table to CSV and a versioned
-summary to JSON. The JSON uses `schema_version: 1` and retains full precision;
-the printed table remains rounded for readability. Both output paths are
-optional, and parent directories are created when needed.
-
-## Optional real-video mode
-
-```bash
-python -m pip install -e '.[video]'
-tennis-shot-demo --source video --input your_clip.mp4 --pose-model /path/to/pose_landmarker.task
-```
-
-Video mode uses MediaPipe Tasks and requires a locally supplied Pose Landmarker
-`.task` model file. The project does not download model weights. The legacy
-`--use-mediapipe-video --video-path ...` flags remain available for existing
-scripts; add `--pose-model PATH` to use them.
-
-MediaPipe wheels vary by Python version and architecture. PyPI currently
-publishes a macOS ARM64 wheel for MediaPipe 1.1.1, while MediaPipe 0.10.21 has a
-CPython 3.12 universal2 wheel for both ARM64 and Intel. This project uses the
-Tasks API, so it does not depend on the removed Legacy Solutions API. Python
-3.12 is the recommended cross-architecture macOS environment; check wheel
-availability before selecting another version or architecture.
-
-The extractor checks that the video opens and reports a finite positive FPS,
-passes strictly increasing millisecond timestamps to MediaPipe, skips frames
-below the configured visibility threshold, and always releases the video
-capture. No camera permission is needed for local-file mode.
-
-## Analyze a landmark CSV
-
-CSV input uses the same canonical landmark columns as the synthetic and video
-pipelines:
+The example is generated data, not a person's recording. Canonical input has at
+least two rows and unique column names:
 
 ```text
 frame,time_s,hip_x,hip_y,shoulder_x,shoulder_y,wrist_x,wrist_y
-0,0.000,0.50,0.78,0.50,0.42,0.30,0.63
-1,0.020,0.50,0.78,0.51,0.42,0.34,0.60
+0,0.0,0.5,0.78,0.5,0.42,0.3,0.6
+1,0.1,0.5,0.78,0.52,0.42,0.4,0.55
+2,0.2,0.5,0.78,0.53,0.42,0.45,0.53
 ```
 
-`frame` is optional; when present, it is a non-negative, strictly increasing
-integer source-frame number and may contain gaps. `time_s` and all required
-coordinates must be numeric and finite. Timestamps must increase strictly;
-irregular positive intervals are allowed.
-
-```bash
-tennis-shot-demo --source csv --input landmarks.csv --no-show
-```
-
-The reusable Python entry point accepts a pandas DataFrame with this schema:
+Required values are numeric and finite; `time_s` increases strictly. Irregular
+positive intervals are accepted. `frame` is optional and, when present, holds
+non-negative, strictly increasing integer source-frame numbers. Duplicate CSV
+headers are rejected before pandas can rename them. Extra uniquely named
+columns are preserved. See [API and output contracts](docs/CLI.md).
 
 ```python
-from tennis_shot_analysis import analyze_landmarks
+import pandas as pd
+from tennis_shot_analysis import AnalysisSummary, analyze_landmarks
 
-enriched_landmarks, summary = analyze_landmarks(landmarks)
+landmarks = pd.read_csv("examples/landmarks.csv")
+enriched, summary = analyze_landmarks(landmarks)
+print(summary.to_dict())
 ```
 
-Recommended input:
+This table interface can accept output from other pose estimators when the
+coordinate and time conventions match. It currently analyzes one sequence of
+wrist/shoulder/hip landmarks; automatic handedness, multiple people, 3D metrics,
+and arbitrary sport-specific measures are not implemented.
 
-- single-player clip
-- stable camera view
-- full body visible
-- limited occlusion
-
-## Landmark input contract
-
-`compute_metrics()` requires at least two rows with numeric, finite values for
-`time_s`, `hip_x`, `hip_y`, `shoulder_x`, `shoulder_y`, `wrist_x`, and `wrist_y`.
-Timestamps must be strictly increasing. Irregular positive frame intervals are
-supported; wrist speed uses the elapsed time between each pair of rows. The
-video extractor omits frames whose selected landmarks are below the configured
-visibility threshold.
-
-`impact_frame` is retained as the zero-based analyzed row position for
-compatibility. `impact_source_frame` reports the original frame number when the
-input contains a `frame` column.
-
-The reported wrist speed uses normalized 2D image coordinates, and torso
-rotation is a simple shoulder/hip coordinate difference. These are demo proxy
-metrics, not calibrated physical measurements or scientifically validated
-biomechanics.
-
-## Privacy and open-source positioning
-
-This project is sanitized for public sharing:
-
-- no private videos are committed
-- no personal, client, or internal identifiers are included
-- default workflow uses deterministic synthetic data
-
-See [docs/SANITIZATION.md](docs/SANITIZATION.md) before publishing updates.
-
-## Notebook status
-
-The original notebook is intentionally preserved as:
-
-- a learning baseline
-- a reference for migration from exploratory analysis to package architecture
-
-The new notebook in `notebooks/` demonstrates how to consume the packaged code instead of duplicating logic inline.
-
-## Validation
-
-Run the project checks from the repository root:
+## Optional local-video mode
 
 ```bash
-pytest
-python -m tennis_shot_analysis --no-show
+python -m pip install -e '.[video]'
+tennis-shot-demo --source video --input your_clip.mp4 \
+  --pose-model /path/to/pose_landmarker.task --no-show
 ```
 
-Releases are created from a `vX.Y.Z` tag that matches the package version in
-`pyproject.toml`. The release workflow runs the test suite and synthetic CLI
-demo, builds source and wheel distributions, then attaches them to the GitHub
-release.
+Use a clip you have permission to process and a locally supplied compatible
+Pose Landmarker `.task` model. No weights are downloaded automatically. The
+extractor selects the first detected person's **right** wrist, shoulder, and
+hip, rejects low-visibility frames, and derives time from the reported FPS.
+Variable frame-rate presentation timestamps are not supported.
 
-## License
+Wheel availability varies by Python, OS, and architecture. Check it before
+installation; use only one OpenCV distribution in an environment. The video
+extra lets MediaPipe choose its OpenCV dependency. `requirements.txt` installs
+core only; `requirements-video.txt` selects the same video extra.
 
-[BSD 2-Clause](LICENSE)
+The optional CI smoke check uses real OpenCV encoding/decoding and real Tasks
+imports, with a **fake landmarker**. It verifies integration without a model;
+it does not validate real pose inference. On the reference Apple Silicon Mac,
+video-wheel downloads were stopped for low throughput; local video inference
+remains unverified. See [validation evidence](docs/VALIDATION.md).
+
+## Develop and contribute
+
+```bash
+python -m pip install -e '.[dev,release]'
+python -m pytest
+python -m build
+```
+
+The package lives in `src/tennis_shot_analysis`; regression tests are in `tests/`.
+The [original notebook](BlazePose_tennis_shot_analysis.ipynb) and
+[package notebook](notebooks/package_workflow_demo.ipynb) remain learning references.
+
+- [Contributing](CONTRIBUTING.md), [governance](GOVERNANCE.md), [security policy](SECURITY.md)
+- [Detailed upgrade roadmap](docs/ROADMAP.md) and [release procedure](docs/RELEASING.md)
+- Technical guides: [English](docs/guide.en.md), [中文](docs/guide.zh-CN.md), [日本語](docs/guide.ja.md)
+- [Changelog](CHANGELOG.md), [sanitization checklist](docs/SANITIZATION.md), [notebook migration](docs/migration.en.md)
+
+CLI exports must use distinct paths and cannot overwrite input/model files,
+including aliases through symlinks or hardlinks. Existing unrelated output
+files can be replaced, so select an output directory deliberately. All output
+parents are created automatically. [BSD 2-Clause license](LICENSE).

@@ -1,4 +1,7 @@
+import csv
 import math
+from collections import Counter
+from itertools import chain
 from pathlib import Path
 
 import numpy as np
@@ -45,8 +48,16 @@ def load_landmarks_csv(csv_path: Path) -> pd.DataFrame:
         raise FileNotFoundError(f"Landmark CSV file not found: {csv_path}")
 
     try:
-        return pd.read_csv(csv_path)
-    except (OSError, UnicodeDecodeError, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
+        with csv_path.open(encoding="utf-8-sig", newline="") as source:
+            # Match pandas' blank-line handling without losing quoted headers.
+            first_line = next((line for line in source if line.strip()), "")
+            header = next(csv.reader(chain([first_line], source)), [])
+            duplicates = [name for name, count in Counter(header).items() if count > 1]
+            if duplicates:
+                raise ValueError(f"Landmark CSV header has duplicate columns: {', '.join(duplicates)}.")
+            source.seek(0)
+            return pd.read_csv(source)
+    except (OSError, UnicodeDecodeError, csv.Error, pd.errors.EmptyDataError, pd.errors.ParserError) as exc:
         raise ValueError(f"Could not read landmark CSV file '{csv_path}': {exc}") from exc
 
 

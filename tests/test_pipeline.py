@@ -241,3 +241,27 @@ def test_cli_reports_summary_output_errors_without_traceback(tmp_path):
     assert result.returncode == 2
     assert "Could not write summary JSON" in result.stderr
     assert "Traceback" not in result.stderr
+
+
+@pytest.mark.parametrize("prefix", ["", "\ufeff", "\n", " \t\n"])
+def test_csv_loader_rejects_duplicate_headers_before_pandas_renames_them(tmp_path, prefix):
+    source = tmp_path / "duplicate.csv"
+    source.write_text(prefix + 'time_s,"wrist_x",wrist_x\n0,0.2,0.9\n0.1,0.3,0.8\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="(?i)duplicate.*wrist_x"):
+        load_landmarks_csv(source)
+
+
+def test_plot_closes_figure_if_saving_fails(tmp_path, monkeypatch):
+    import matplotlib.pyplot as plt
+    from matplotlib.figure import Figure
+
+    landmarks, summary, label = run_analysis(AnalysisConfig(frame_count=8))
+    before = plt.get_fignums()
+
+    def fail_save(*args, **kwargs):
+        raise OSError("simulated full disk")
+
+    monkeypatch.setattr(Figure, "savefig", fail_save)
+    with pytest.raises(OSError, match="full disk"):
+        plot_analysis(landmarks, summary, label, show=False, save_path=str(tmp_path / "figure.png"))
+    assert plt.get_fignums() == before
