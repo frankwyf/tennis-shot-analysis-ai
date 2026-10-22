@@ -26,7 +26,14 @@ Describe what actually happened.
 
 - OS:
 - Python version:
+- CPU architecture:
+- Package version (`tennis-shot-demo --version`):
 - Install command:
+- Core or video extra:
+
+Use generated landmarks or synthetic video in reproductions. Redact secrets,
+private media, and personal absolute paths. For security vulnerabilities, use
+the private reporting instructions in SECURITY.md rather than posting details.
 
 ## Additional context
 

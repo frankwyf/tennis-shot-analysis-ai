@@ -54,6 +54,10 @@ def _validate_landmarks(landmarks: pd.DataFrame) -> dict[str, np.ndarray]:
     if not isinstance(landmarks, pd.DataFrame):
         raise TypeError("landmarks must be a pandas DataFrame.")
 
+    if not landmarks.columns.is_unique:
+        duplicates = landmarks.columns[landmarks.columns.duplicated()].unique()
+        raise ValueError(f"Duplicate landmark columns: {', '.join(map(str, duplicates))}.")
+
     if len(landmarks) < 2:
         raise ValueError("At least two frames are required to compute speed metrics.")
 

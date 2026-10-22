@@ -1,6 +1,2 @@
-# Runtime dependencies are declared in pyproject.toml.
+# Core only. Optional video dependencies: requirements-video.txt or .[video].
 -e .
-
-# Video-related dependencies
-mediapipe>=0.10.14
-opencv-python>=4.8

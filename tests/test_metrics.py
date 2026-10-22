@@ -125,3 +125,10 @@ def test_compute_metrics_rejects_non_finite_derived_speed():
 
     with pytest.raises(ValueError, match="wrist_speed.*non-finite"):
         compute_metrics(landmarks)
+
+
+def test_compute_metrics_reports_duplicate_column_labels():
+    landmarks = make_landmarks()
+    landmarks = pd.concat([landmarks, landmarks[["wrist_x"]]], axis=1)
+    with pytest.raises(ValueError, match="(?i)duplicate.*wrist_x"):
+        compute_metrics(landmarks)

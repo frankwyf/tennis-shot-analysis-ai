@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-10-22
+
+### Added
+
+- Added `--no-plot` batch execution, `--version`, and public `AnalysisSummary` / `__version__` exports.
+- Added cross-platform and minimum numerical-dependency CI, clean installed-wheel checks, pinned Actions, and dependency update PR configuration.
+- Added distribution checksums, release ancestry validation, and checksum verification before GitHub publication.
+- Added public API/CLI contracts, metric limitations, macOS external SSD guidance, security/governance policies, a reference dependency snapshot, and a staged upgrade roadmap.
+- Added a small generated landmark CSV example and included guides, tests, scripts, and notebooks in the source distribution.
+
+### Fixed
+
+- Core `requirements.txt` no longer pulls video packages or a competing OpenCV distribution.
+- Reject duplicate DataFrame column labels and duplicate CSV headers explicitly.
+- Prevent CLI exports from overwriting input/model files (including file aliases) or using colliding output paths.
+- Create nested figure-output directories, report expected plotting/file errors cleanly, and close owned figures even when saving fails.
+
+### Compatibility
+
+- Existing 2D proxy definitions, schema version 1 exports, synthetic defaults, and legacy video aliases remain unchanged.
+- Previously accepted ambiguous duplicate columns and output/input collisions now fail with clear errors.
+- This alpha release does not establish real-model inference accuracy or physical biomechanics validity. Publishing targets GitHub Releases; PyPI publishing is not configured.
+
 ## [0.3.0] - 2026-10-21
 
 ### Added
